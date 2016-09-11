@@ -13,7 +13,7 @@ build*
 *.a
 *.la
 *.lai
-*.so
+*.so*
 *.dll
 *.dylib
 
@@ -40,3 +40,5 @@ build-
 
 # QtCtreator CMake
 CMakeLists.txt.user
+
+UploadComponent

@@ -98,10 +98,16 @@ DEPENDPATH += $$PWD/../zlib
 win32 {
    # LIBS+= $$OUT_PWD/../libusb/release/libusblib.lib
 }
-else:unix {
+else:macx {
     LIBS+= $$OUT_PWD/../libusb/libusblib.a
     LIBS += -framework CoreFoundation -framework Cocoa -framework IOKit
     INCLUDEPATH += $$PWD/../libusb/include/libusb-1.0
+}
+else:unix {
+    LIBS += /usr/include/libusb-1.0/libusb.h
+    LIBS += /usr/lib/x86_64-linux-gnu/libusb-1.0.so
+    INCLUDEPATH += /usr/include/libusb-1.0/
+    INCLUDEPATH += /usr/lib/x86_64-linux-gnu/
 }
 
 #framework
