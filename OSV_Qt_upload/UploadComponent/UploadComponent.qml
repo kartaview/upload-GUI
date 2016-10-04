@@ -324,4 +324,7 @@ Window {
     //message dialog
     UploadCompleteDialog { }
 
+    //error dialog
+    ErrorDialog { }
+
 }

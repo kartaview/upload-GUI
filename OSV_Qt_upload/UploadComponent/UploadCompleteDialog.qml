@@ -11,7 +11,6 @@ Dialog {
         uploadController.resetUploadValues();
         close();
     }
-    modality: Qt.NonModal
     standardButtons: StandardButton.Ok
     visible: uploadController.isUploadComplete
 

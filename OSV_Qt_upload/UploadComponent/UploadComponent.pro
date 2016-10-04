@@ -2,7 +2,7 @@ TEMPLATE = app
 
 QT += qml quick concurrent core network xml
 
-CONFIG += c++11 kqoauth deploy
+CONFIG += c++11 kqoauth
 
 SOURCES += main.cpp \
     logincontroller.cpp \
@@ -10,7 +10,6 @@ SOURCES += main.cpp \
     photo.cpp \
     Sequence.cpp \
     jsonserializable.cpp \
-    user.cpp \
     GZIP.cpp \
     exif.cpp \
     UploadManager.cpp \
@@ -35,7 +34,6 @@ HEADERS += \
     photo.h \
     Sequence.h \
     jsonserializable.h \
-    user.h \
     GZIP.h \
     exif.h \
     UploadManager.h \

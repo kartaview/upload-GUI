@@ -42,6 +42,7 @@ void ElapsedTimeCounter::resume()
 
 void ElapsedTimeCounter::reset()
 {
+    stop();
     m_elapsedTime = 0;
     m_timeAtStart = 0;
     m_timeAtPause = 0;

@@ -7,11 +7,13 @@ UploadController::UploadController(LoginController* lc, PersistentController* pc
       m_isUploadPaused(false),
       m_elapsedTimeCounter(new ElapsedTimeCounter()),
       m_uploadManager(new UploadManager()),
-      m_isUploadComplete(false)
+      m_isUploadComplete(false),
+      m_isError(false)
 {
     reset();
     onInformationChanged();
 
+    connect(m_uploadManager, SIGNAL(errorFound()), this, SLOT(onErrorFound()));
     connect(m_uploadManager, SIGNAL(sequenceCreated(int)), this, SLOT(onSequenceCreated(int)));
     connect(m_uploadManager, SIGNAL(SequenceFinished(int)), this, SLOT(onSequenceFinished(int)));
     connect(m_uploadManager, SIGNAL(photoUploaded(int,int)), this, SLOT(onPhotoUploaded(int,int)));
@@ -59,7 +61,7 @@ void UploadController::selectNewSequence()
 
 void UploadController::UploadSequence(PersistentSequence* sequence, const int sequenceIndex)
 {
-    sequence->set_user(m_loginController->getUser());
+    sequence->set_token(m_loginController->getClientToken());
     const int photoCount(sequence->get_photos().count());
     const int videoCount(sequence->get_videos().count());
 
@@ -340,6 +342,17 @@ void UploadController::onInformationChanged()
     }
 }
 
+void UploadController::onErrorFound() // send also a message
+{
+    set_isError(true);
+    m_elapsedTimeCounter->stop();
+}
+
+void UploadController::errorAknowledged()
+{
+    set_isError(false);
+    reset();
+}
 
 void UploadController::onElapsedTimeChanged()
 {

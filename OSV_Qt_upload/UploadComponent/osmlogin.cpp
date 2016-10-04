@@ -46,6 +46,7 @@ void OSMLogin::initiateLogin()
     m_kqoAuthRequest->setConsumerSecretKey(CONSUMER_SECRET_KEY);
 
     m_kqoAuthManager->executeRequest(m_kqoAuthRequest);
+    qDebug()<<"EXECUTED REQUEST";
 }
 
 void OSMLogin::onAuthorizationReceived(QString token, QString verifier)
@@ -122,8 +123,6 @@ void OSMLogin::onRequestReady(QByteArray response)
     }
     else
     {
-        m_userName = userName;
-        m_externalUserId = externalUserId;
         emit receivedUserInfo();
     }
 }
@@ -157,14 +156,12 @@ void OSMLogin::getUserDetails()
     m_kqoAuthManager->executeRequest(m_kqoAuthRequest);
 }
 
-void OSMLogin::setUserInfo(User *user)
-{
-    user->set_username(m_userName);
-    user->set_externalUserId(m_externalUserId.toInt());
-    user->set_clientToken(m_token);
-}
-
 void OSMLogin::setIsLoggedIn (bool isLoggedIn)
 {
     m_isLoggedIn = isLoggedIn;
+}
+
+void OSMLogin::setClientToken(QString& clientToken)
+{
+    clientToken = m_token;
 }

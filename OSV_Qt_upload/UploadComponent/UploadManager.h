@@ -29,6 +29,7 @@ signals:
     void videoUploaded(int sequenceIndex, int videoIndex);
     void fileUploaded(int sequenceIndex);
     void sequenceCreated(int sequenceIndex);
+    void errorFound();
 
     void NewSequenceFailed(PersistentSequence *sequence, const int sequenceIndex);
     void SequenceFinishedFailed(PersistentSequence *sequence, const int sequenceIndex);

@@ -15,9 +15,8 @@ inline QDir getCurrentFolder()
 }
 
 LoginController::LoginController(OSMLogin *osmLogin):
-    m_user(new User()),
     m_osmLogin(osmLogin),
-    m_userDetailFilePath(getCurrentFolder().path() + "/userDetails.ini") //path declared as const member to make sure that QApplication object is initialized
+    m_tokenFilePath(getCurrentFolder().path() + "/userDetails.ini") //path declared as const member to make sure that QApplication object is initialized
 {
     QObject::connect(m_osmLogin, SIGNAL(successfulLogin()), this, SLOT(loginSuccess()));
     QObject::connect(m_osmLogin, SIGNAL(failedLogin()), this, SLOT(loginFailedMessage()));
@@ -28,7 +27,7 @@ LoginController::LoginController(OSMLogin *osmLogin):
 
 bool LoginController::checkIfUserFileExists()
 {
-    const QFileInfo checkFile(m_userDetailFilePath);
+    const QFileInfo checkFile(m_tokenFilePath);
     return (checkFile.exists () && checkFile.isFile ());
 }
 
@@ -57,7 +56,7 @@ void LoginController::logout()
 {
     if (checkIfUserFileExists())
     {
-        QFile::remove(m_userDetailFilePath);
+        QFile::remove(m_tokenFilePath);
         set_isLoggedIn(false);
         m_osmLogin->setIsLoggedIn(false);
     }
@@ -82,10 +81,12 @@ void LoginController::loginFailedMessage()
 void LoginController::loadUserInfoFromFile()
 {
     // gets and stores the user details from the .ini file
-    m_user->loadUserInfoFromFile(m_userDetailFilePath);
-    if (!m_user->isUserValid())
+    const QSettings userDetailsFile (m_tokenFilePath, QSettings::IniFormat);
+    m_clientToken = userDetailsFile.value("userToken").toString ();
+
+    if (m_clientToken.isEmpty())
     {
-        QFile::remove(m_userDetailFilePath);
+        QFile::remove(m_tokenFilePath);
         login();
     }
 }
@@ -95,16 +96,17 @@ void LoginController::loadUserInfoFromFile()
  */
 void LoginController::onSetUserInfo()
 {
-    m_osmLogin->setUserInfo(m_user);
-    qDebug() << "CLIENT TOKEN" << m_user->get_clientToken() << "USER NAME :" << m_user->get_username() << "USER EXTERNAL ID: " <<  m_user->get_externalUserId();
+    m_osmLogin->setClientToken(m_clientToken);
+    qDebug() << "CLIENT TOKEN" << m_clientToken;
 
-    if (m_user->isUserValid()) // if the .ini file exists, it continues with the data obtained from the file in order to upload the photos
+    if (!m_clientToken.isEmpty()) // if the .ini file exists, it continues with the data obtained from the file in order to upload the photos
     {
-        m_user->saveUserInfoToFile(m_userDetailFilePath);
+        QSettings userDetailsFile (m_tokenFilePath, QSettings::IniFormat);
+        userDetailsFile.setValue ("userToken", m_clientToken);
     }
     else
     {
-        QFile::remove(m_userDetailFilePath);
+        QFile::remove(m_tokenFilePath);
         login ();
     }
 }
@@ -119,7 +121,8 @@ void LoginController::checkIfLoggedIn()
 
     set_isLoggedIn(userFileExists);
 }
-User* LoginController::getUser()
+
+QString LoginController::getClientToken()
 {
-    return m_user;
+    return m_clientToken;
 }

@@ -4,7 +4,6 @@
 PersistentSequence::PersistentSequence(QObject *parent)
     : JsonSerializable(parent),
       m_sequence(new Sequence()),
-      m_user(new User()),
       m_metadata(nullptr),
       m_path(""),
       m_name(""),

@@ -4,7 +4,6 @@
 #include <Sequence.h>
 #include <QDebug>
 #include "video.h"
-#include "user.h"
 #include "metadata.h"
 enum class SequenceStatus : int {   BUSY = 2,
                                     SUCCESS = 1,
@@ -25,7 +24,7 @@ class PersistentSequence : public JsonSerializable
 
     QML_WRITABLE_PROPERTY (long long, size)
     QML_WRITABLE_PROPERTY (SequenceStatus, status)
-    QML_WRITABLE_PROPERTY (User*, user)
+    QML_WRITABLE_PROPERTY (QString, token)
     QML_WRITABLE_PROPERTY (Sequence*, sequence)
 
     Q_PROPERTY (SequenceType type READ type)

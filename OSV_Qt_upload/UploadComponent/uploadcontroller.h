@@ -18,6 +18,7 @@ class UploadController : public QObject
     QML_WRITABLE_PROPERTY (qint64, uploadSpeed)
     QML_WRITABLE_PROPERTY (bool, isUploadStarted)
     QML_WRITABLE_PROPERTY (qint64, elapsedTime)
+    QML_WRITABLE_PROPERTY (bool, isError)
 
     QML_WRITABLE_PROPERTY(bool, isUploadComplete)
 
@@ -37,9 +38,11 @@ public slots:
     void onSequenceFinished(int sequenceIndex);
     void onInformationChanged();
     void onElapsedTimeChanged();
+    void onErrorFound();
 
     Q_INVOKABLE void startUpload();
     Q_INVOKABLE void resetUploadValues();
+    Q_INVOKABLE void errorAknowledged();
 
 private:
     void selectNewSequence();

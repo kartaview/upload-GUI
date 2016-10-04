@@ -2,7 +2,7 @@
 #define LOGINCONTROLLER_H
 
 #include <osmlogin.h>
-#include "user.h"
+#include "qqmlhelpers.h"
 #include "httprequest.h"
 
 class LoginController : public QObject
@@ -12,7 +12,6 @@ class LoginController : public QObject
 
 public:
     LoginController(OSMLogin *osmLogin);
-    User* getUser();
 
 public slots:
     Q_INVOKABLE void login();
@@ -23,13 +22,15 @@ public slots:
     void onSetUserInfo();
     void checkIfLoggedIn();
 
+    QString getClientToken();
+
 private:
     void loadUserInfoFromFile();
     bool checkIfUserFileExists();
 
-    const QString m_userDetailFilePath;
-    OSMLogin *m_osmLogin;
-    User* m_user;
+    const QString m_tokenFilePath;
+    OSMLogin* m_osmLogin;
+    QString   m_clientToken;
 };
 
 #endif // LOGINCONTROLLER_H

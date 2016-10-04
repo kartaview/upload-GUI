@@ -1,7 +1,6 @@
 #ifndef PHOTO_H
 #define PHOTO_H
-
-#include <qqmlhelpers.h>
+#include <QObject>
 #include <uploadcomponentconstants.h>
 
 

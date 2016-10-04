@@ -7,7 +7,6 @@
 #include "qsettings.h"
 #include <QtKOAuth>
 #include <QCoreApplication>
-#include "user.h"
 
 class OSMLogin : public QObject
 {
@@ -19,10 +18,12 @@ public:
     void initiateLogin();
     void xauth();
     bool isLoggedIn();
+
     QString getTokenString();
+
     void getUserDetails();
-    void setUserInfo(User *user);
     void setIsLoggedIn(bool isLoggedIn);
+    void setClientToken(QString& clientToken);
 
 signals:
     void successfulLogin();
@@ -45,8 +46,6 @@ private:
     KQOAuthManager *m_kqoAuthManager;
     bool m_isLoggedIn = false;
     QString m_token;
-    QString m_userName;
-    QString m_externalUserId;
 
 };
 

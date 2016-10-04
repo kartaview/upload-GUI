@@ -40,7 +40,8 @@ static const int kCountThreads = 6;
 Status Codes
 */
 
-enum class OSVStatusCode : int {  SUCCESS = 600,
+enum class OSVStatusCode : int {  BAD_LOGIN = 401,
+                                  SUCCESS = 600,
                                   SUCCESS_SAVE_ERROR = 602,
                                   ARGUMENT_MISSING = 610,
                                   ARGUMENT_WRONG_TYPE = 611,

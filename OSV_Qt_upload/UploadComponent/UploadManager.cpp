@@ -89,6 +89,10 @@ void UploadManager::requestNewSequence(PersistentSequence *sequence, const int s
                 disconnect(request, SIGNAL(newBytesDifference(qint64)), this, SIGNAL(uploadProgress(qint64)));
                 emit sequenceCreated(sequenceIndex);
             }
+            else if (statusCode == OSVStatusCode::BAD_LOGIN)
+            {
+                emit errorFound();
+            }
             else
             {
                 sequenceFailed = true;
@@ -124,20 +128,16 @@ void UploadManager::requestNewSequence(PersistentSequence *sequence, const int s
         }
     }
 
-    const User *user(sequence->get_user());
+    const QString token(sequence->get_token());
 
     QHttpMultiPart *map = new QHttpMultiPart(QHttpMultiPart::FormDataType);
     QHttpPart filePart;
-    QHttpPart extUserIdPart;
-    QHttpPart usernamePart;
-    QHttpPart userTypePart;
-    QHttpPart clientTokenPart;
-    QHttpPart coordinatePart;
+
     double lat = sequence->getSequence()->get_current_lat();
     double lng = sequence->getSequence()->get_current_lng();
 
     bool emptyData = false;
-    if((buffer.isEmpty() && sequence->get_videos().size()) || user->get_externalUserId() < 0 || user->get_username().isEmpty() || user->get_userType().isEmpty() || user->get_clientToken().isEmpty() || !(lat && lng))
+    if((buffer.isEmpty() && sequence->get_videos().size()) || sequence->get_token().isEmpty() || !(lat && lng))
     {
         emptyData = true;
     }
@@ -165,23 +165,13 @@ void UploadManager::requestNewSequence(PersistentSequence *sequence, const int s
             map->append(platformVersionPart);
         }
 
-        extUserIdPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"externalUserId\""));
-        extUserIdPart.setBody(QString::number(user->get_externalUserId()).toLatin1());
-        map->append(extUserIdPart);
-
-        usernamePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"userName\""));
-        usernamePart.setBody(user->get_username().toLatin1());
-        map->append(usernamePart);
-
-        userTypePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"userType\""));
-        userTypePart.setBody(user->get_userType().toLatin1());
-        map->append(userTypePart);
-
+        QHttpPart clientTokenPart;
         clientTokenPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"clientToken\""));
-        clientTokenPart.setBody(user->get_clientToken().toLatin1());
+        clientTokenPart.setBody(sequence->get_token().toLatin1());
         map->append(clientTokenPart);
 
         QString coordinate = QString::number(lat)+","+QString::number(lng);
+        QHttpPart coordinatePart;
         coordinatePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"currentCoordinate\""));
         coordinatePart.setBody(coordinate.toLatin1());
         map->append(coordinatePart);
@@ -276,15 +266,13 @@ void UploadManager::requestSequenceFinished(PersistentSequence *sequence, const 
     QMap<QString, QString> map = QMap<QString, QString>();
     bool emptyData = false;
 
-    if(sequence->getSequence()->get_id() < 0 || sequence->get_user()->get_externalUserId() < 0 || sequence->get_user()->get_userType().isEmpty())
+    if(sequence->getSequence()->get_id() < 0 )
     {
         emptyData = true;
     }
     else
     {
         map.insert("sequenceId",QString::number(sequence->getSequence()->get_id()));
-        map.insert("externalUserId",QString::number(sequence->get_user()->get_externalUserId()));
-        map.insert("userType",sequence->get_user()->get_userType());
 
     }
 
