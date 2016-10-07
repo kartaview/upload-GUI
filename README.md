@@ -18,6 +18,7 @@ The application is compatible with :
     
 ## Requirements:
 - Qt 5.6
+- open SSL
 
 Windows:
 - Visual C++ Redistributable Packages (for Windows)
