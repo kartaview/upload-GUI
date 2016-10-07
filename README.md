@@ -11,7 +11,10 @@ worry! The progress is saved and the next time the application is run the user c
 
 
 ## Compatibility: 
-The application is compatible with Windows and Mac OSX
+The application is compatible with :
+- Windows
+- Mac OSX
+- Linux (new)
     
 ## Requirements:
 - Qt 5.6
