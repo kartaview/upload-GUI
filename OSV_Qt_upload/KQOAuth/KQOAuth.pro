@@ -48,9 +48,13 @@ win32 {
     LIBS+= $$PWD/../openssl/lib/ssleay32.lib
     LIBS+= $$PWD/../openssl/lib/libeay32.lib
 }
-else:unix {
+else:macx {
     LIBS+= $$PWD/../openssl/lib/libcrypto.a
     LIBS+= $$PWD/../openssl/lib/libssl.a
+}
+else:unix {
+    LIBS += /usr/lib/x86_64-linux-gnu/libcrypto.so
+    LIBS += /usr/lib/x86_64-linux-gnu/libssl.so
 }
 
 #headers.files = \

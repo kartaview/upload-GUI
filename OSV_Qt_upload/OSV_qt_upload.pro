@@ -10,7 +10,7 @@ CONFIG += c++11
 
 UploadComponent.depends = HTTPRequest KQOAuth QTQMLUtils zlib
 
-unix {
+macx {
     SUBDIRS += libusb
     UploadComponent.depends += libusb
 }
