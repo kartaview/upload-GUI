@@ -1,12 +1,12 @@
 #ifndef OSMLOGIN_H
 #define OSMLOGIN_H
 
-#include <QObject>
-#include "kqoauthrequest.h"
 #include "kqoauthmanager.h"
+#include "kqoauthrequest.h"
 #include "qsettings.h"
-#include <QtKOAuth>
 #include <QCoreApplication>
+#include <QObject>
+#include <QtKOAuth>
 
 class OSMLogin : public QObject
 {
@@ -21,32 +21,28 @@ public:
 
     QString getTokenString();
 
-    void getUserDetails();
     void setIsLoggedIn(bool isLoggedIn);
-    void setClientToken(QString& clientToken);
+    void setTokens(QString& token, QString& secretToken);
 
 signals:
     void successfulLogin();
     void failedLogin();
-    void receivedUserInfo();
 
 private slots:
     void onTemporaryTokenReceived(QString temporaryToken, QString temporaryTokenSecret);
     void onAuthorizationReceived(QString token, QString verifier);
     void onAccessTokenReceived(QString token, QString tokenSecret);
-    void onAuthorizedRequestDone();
-    void onRequestReady(QByteArray);
 
 private:
     void resetManager();
 
 private:
-    QSettings m_oauthSettings;
-    KQOAuthRequest *m_kqoAuthRequest;
-    KQOAuthManager *m_kqoAuthManager;
-    bool m_isLoggedIn = false;
-    QString m_token;
-
+    QSettings       m_oauthSettings;
+    KQOAuthRequest* m_kqoAuthRequest;
+    KQOAuthManager* m_kqoAuthManager;
+    bool            m_isLoggedIn = false;
+    QString         m_token;
+    QString         m_secretToken;
 };
 
-#endif // OSMLOGIN_H
+#endif  // OSMLOGIN_H

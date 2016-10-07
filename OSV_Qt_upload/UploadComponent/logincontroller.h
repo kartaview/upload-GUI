@@ -1,17 +1,17 @@
 #ifndef LOGINCONTROLLER_H
 #define LOGINCONTROLLER_H
 
-#include <osmlogin.h>
-#include "qqmlhelpers.h"
 #include "httprequest.h"
+#include "qqmlhelpers.h"
+#include <osmlogin.h>
 
 class LoginController : public QObject
 {
     Q_OBJECT
-    QML_WRITABLE_PROPERTY (bool, isLoggedIn)
+    QML_WRITABLE_PROPERTY(bool, isLoggedIn)
 
 public:
-    LoginController(OSMLogin *osmLogin);
+    LoginController(OSMLogin* osmLogin);
 
 public slots:
     Q_INVOKABLE void login();
@@ -19,18 +19,22 @@ public slots:
 
     void loginSuccess();
     void loginFailedMessage();
-    void onSetUserInfo();
+
     void checkIfLoggedIn();
 
     QString getClientToken();
 
 private:
     void loadUserInfoFromFile();
+    void setUserInfo();
     bool checkIfUserFileExists();
+    void requestAccessTokenFromOSV();
 
     const QString m_tokenFilePath;
-    OSMLogin* m_osmLogin;
-    QString   m_clientToken;
+    OSMLogin*     m_osmLogin;
+    QString       m_requestToken;
+    QString       m_accessToken;
+    QString       m_secretToken;
 };
 
-#endif // LOGINCONTROLLER_H
+#endif  // LOGINCONTROLLER_H

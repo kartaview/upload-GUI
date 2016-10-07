@@ -2,7 +2,7 @@ TEMPLATE = app
 
 QT += qml quick concurrent core network xml
 
-CONFIG += c++11 kqoauth
+CONFIG += c++11 kqoauth deploy
 
 SOURCES += main.cpp \
     logincontroller.cpp \

@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>UploadComponent.qml</file>
+        <file>CustomButton.qml</file>
+        <file>UtilFunctions.js</file>
+        <file>UploadCompleteDialog.qml</file>
+        <file>ErrorDialog.qml</file>
+    </qresource>
+</RCC>

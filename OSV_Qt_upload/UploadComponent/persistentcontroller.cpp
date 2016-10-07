@@ -1,10 +1,10 @@
 #include "persistentcontroller.h"
-#include <QFile>
-#include <QDir>
-#include <QtCore/QVariant>
-#include <QCoreApplication>
 #include "uploadcomponentconstants.h"
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
 #include <QtAlgorithms>
+#include <QtCore/QVariant>
 
 // HACK - made to put the directories in the same place for 2 different OS
 inline QDir getCurrentFolder()
@@ -18,10 +18,11 @@ inline QDir getCurrentFolder()
     return current;
 }
 
-PersistentController::PersistentController(QObject *parent)
-    : QObject(parent),
-      m_saveFilePath(getCurrentFolder().path()+"/save.json"), //path declared as const member to make sure that QApplication object is initialized
-      m_sequences(new QQmlObjectListModel<PersistentSequence>(this))
+PersistentController::PersistentController(QObject* parent)
+    : QObject(parent)
+    , m_saveFilePath(getCurrentFolder().path() + "/save.json")
+    ,  // path declared as const member to make sure that QApplication object is initialized
+    m_sequences(new QQmlObjectListModel<PersistentSequence>(this))
 {
     reset();
 }
@@ -36,13 +37,13 @@ void PersistentController::reset()
 
     load();
     int seqIndex = 0;
-    foreach(PersistentSequence * s, m_persistentSequences)
+    foreach (PersistentSequence* s, m_persistentSequences)
     {
-        if(s->get_status() != SequenceStatus::SUCCESS)
+        if (s->getSequenceStatus() != SequenceStatus::SUCCESS)
         {
-            m_enteredDirPath.append(s->get_path());
+            m_enteredDirPath.append(s->getPath());
             checkPaths(seqIndex);
-            if(s->get_size())
+            if (s->size())
             {
                 m_sequences->append(s);
             }
@@ -53,7 +54,7 @@ void PersistentController::reset()
 
 QString PersistentController::convertFolderPath(const QString& folderPath)
 {
-    if(folderPath.endsWith("/")) // adding files by drag&drop puts a "/" at the end
+    if (folderPath.endsWith("/"))  // adding files by drag&drop puts a "/" at the end
     {
         QString fpath = folderPath;
         fpath.chop(1);
@@ -67,12 +68,12 @@ QString PersistentController::convertFolderPath(const QString& folderPath)
  * It is called through a signal from entering the area of the drag and drop region.
  * @param pathReceived represents a qml url path and used to get the subfiles of it.
  */
-void PersistentController::addPreviewPath(const QVariant &pathReceived)
+void PersistentController::addPreviewPath(const QVariant& pathReceived)
 {
-    const QString pathString(QUrl(pathReceived.toString()).toLocalFile());
+    const QString   pathString(QUrl(pathReceived.toString()).toLocalFile());
     const QFileInfo pathInfo(pathString);
 
-    if(pathInfo.isDir())
+    if (pathInfo.isDir())
     {
         m_enteredDirPath.push_back(convertFolderPath(pathInfo.absoluteFilePath()));
     }
@@ -80,22 +81,25 @@ void PersistentController::addPreviewPath(const QVariant &pathReceived)
 
 void PersistentController::onDropped()
 {
-    foreach(PersistentSequence * s, m_persistentSequences)
+    foreach (PersistentSequence* s, m_persistentSequences)
     {
-        if(m_enteredDirPath.contains(s->get_path()))
-            m_enteredDirPath.removeOne(s->get_path());
+        if (m_enteredDirPath.contains(s->getPath()))
+            m_enteredDirPath.removeOne(s->getPath());
     }
     checkPaths();
 }
 
-bool PersistentController::checkMetadata(const QString &path, PersistentSequence * sequence, qint64 &totalSize)
+bool PersistentController::checkMetadata(const QString& path, PersistentSequence* sequence,
+                                         qint64& totalSize)
 {
-    QDirIterator itMetaData(path, QStringList() << "track.txt.gz"<<"track.txt", QDir::Files);
+    QDirIterator itMetaData(path, QStringList() << "track.txt.gz"
+                                                << "track.txt",
+                            QDir::Files);
 
-    while(itMetaData.hasNext())
+    while (itMetaData.hasNext())
     {
         itMetaData.next();
-        if(itMetaData.fileInfo().size() < kGigaByte && itMetaData.fileInfo().suffix() == "gz")
+        if (itMetaData.fileInfo().size() < kGigaByte && itMetaData.fileInfo().suffix() == "gz")
         {
             sequence->set_metadata(new Metadata(itMetaData.filePath(), sequence));
             totalSize += sequence->get_metadata()->getSize();
@@ -104,49 +108,51 @@ bool PersistentController::checkMetadata(const QString &path, PersistentSequence
     }
     sequence->set_metadata(new Metadata("", sequence));
     return false;
-
 }
 
-void PersistentController::checkPhotosExif(const QString &path, PersistentSequence * sequence, qint64 &totalSize)
+void PersistentController::checkPhotosExif(const QString& path, PersistentSequence* sequence,
+                                           qint64& totalSize)
 {
-    QDirIterator itPhotoFile(path, QStringList() << "*.jpg" << "*.jpeg", QDir::Files);
+    QDirIterator itPhotoFile(path, QStringList() << "*.jpg"
+                                                 << "*.jpeg",
+                             QDir::Files);
 
-    QList<Photo *> photos;
-    while(itPhotoFile.hasNext())
+    QList<Photo*> photos;
+    while (itPhotoFile.hasNext())
     {
         itPhotoFile.next();
-        Photo *photo = new Photo(sequence);
+        Photo* photo = new Photo(sequence);
 
-        if(photo->processPhoto(itPhotoFile.filePath()))
+        if (photo->processPhoto(itPhotoFile.filePath()))
         {
             photos.append(photo);
             totalSize += photo->getSize();
         }
     }
 
-    if(photos.size())
+    if (photos.size())
     {
         sequence->set_photos(photos);
         sequence->addPhotoInfo(path, totalSize);
         addPersistentObject(sequence);
     }
-
 }
 
-void PersistentController::checkVideos(const QString &path, PersistentSequence * sequence, qint64 &totalSize)
+void PersistentController::checkVideos(const QString& path, PersistentSequence* sequence,
+                                       qint64& totalSize)
 {
-    QDirIterator itVideoFile(path, QStringList()<<"*.mp4", QDir::Files);
+    QDirIterator itVideoFile(path, QStringList() << "*.mp4", QDir::Files);
 
-    QList<Video *> videos;
-    long long videoSize;
+    QList<Video*> videos;
+    long long     videoSize;
 
-    while(itVideoFile.hasNext())
+    while (itVideoFile.hasNext())
     {
         itVideoFile.next();
         videoSize = itVideoFile.fileInfo().size();
-        if(videoSize > 0 && videoSize < kGigaByte)
+        if (videoSize > 0 && videoSize < kGigaByte)
         {
-            Video *video = new Video(itVideoFile.filePath(), sequence);
+            Video* video = new Video(itVideoFile.filePath(), sequence);
             videos.append(video);
             totalSize += videoSize;
         }
@@ -154,7 +160,7 @@ void PersistentController::checkVideos(const QString &path, PersistentSequence *
 
     qSort(videos.begin(), videos.end(), Video::lessThan);
 
-    if(videos.size()) // exists valid videos
+    if (videos.size())  // exists valid videos
     {
         qSort(videos.begin(), videos.end(), Video::lessThan);
         sequence->set_videos(videos);
@@ -166,29 +172,30 @@ void PersistentController::checkVideos(const QString &path, PersistentSequence *
 /*
  * onDroppedArea validates the files inside the folders dropped.
  * It is called through a signal from dropping inside the area of the drag and drop region.
- * The folders that passes the test are then added to the model list with some of their information: folder name, size, files type
+ * The folders that passes the test are then added to the model list with some of their information:
+ * folder name, size, files type
  * This function is declared as a public slot.
  */
 void PersistentController::checkPaths(const int index)
 {
-    int i;
+    int            i;
     QList<QString> queue;
-    for(i=0;i<m_enteredDirPath.size();i++)
+    for (i = 0; i < m_enteredDirPath.size(); i++)
     {
         queue.push_back(m_enteredDirPath.at(i));
-        while(!queue.empty())
+        while (!queue.empty())
         {
             QString front = queue.takeFirst();
 
-            PersistentSequence *validSequence(nullptr);
-            if(index == -1)
+            PersistentSequence* validSequence(nullptr);
+            if (index == -1)
                 validSequence = new PersistentSequence(this);
             else
                 validSequence = m_persistentSequences.at(index);
 
-            qint64 totalSize=0;
+            qint64 totalSize = 0;
 
-            if(!checkMetadata(front, validSequence, totalSize))
+            if (!checkMetadata(front, validSequence, totalSize))
             {
                 checkPhotosExif(front, validSequence, totalSize);
             }
@@ -198,10 +205,10 @@ void PersistentController::checkPaths(const int index)
             }
 
             QDirIterator itDir(front, QDir::Dirs | QDir::NoDotAndDotDot);
-            while (itDir.hasNext()) // search for sub directories
+            while (itDir.hasNext())  // search for sub directories
             {
                 itDir.next();
-                if(!folderExist(itDir.filePath()))
+                if (!folderExist(itDir.filePath()))
                 {
                     queue.push_back(itDir.filePath());
                 }
@@ -228,11 +235,11 @@ void PersistentController::onExitedDropArea()
  * @param the filepath which will be verified
  * @return true if the path exists in the drag and drop list, and false if it does not.
  */
-bool PersistentController::folderExist(const QString &filepath)
+bool PersistentController::folderExist(const QString& filepath)
 {
-    foreach(PersistentSequence * s, m_persistentSequences)
+    foreach (PersistentSequence* s, m_persistentSequences)
     {
-        if(s->get_path() == filepath)
+        if (s->getPath() == filepath)
         {
             return true;
         }
@@ -242,13 +249,13 @@ bool PersistentController::folderExist(const QString &filepath)
 
 void PersistentController::calculateTotalInformation()
 {
-    qint64 sum = 0;
-    int noFiles = 0;
-    foreach(PersistentSequence* s, m_persistentSequences)
+    qint64 sum     = 0;
+    int    noFiles = 0;
+    foreach (PersistentSequence* s, m_persistentSequences)
     {
-        if(s->get_status() != SequenceStatus::SUCCESS && s->get_size())
+        if (s->getSequenceStatus() != SequenceStatus::SUCCESS && s->size())
         {
-            sum += s->get_size();
+            sum += s->size();
             noFiles += s->get_sequence()->get_photo_no();
         }
     }
@@ -256,7 +263,7 @@ void PersistentController::calculateTotalInformation()
     set_totalSize(sum);
 }
 
-void PersistentController::onFileDialogButton(const QVariant &pathReceived)
+void PersistentController::onFileDialogButton(const QVariant& pathReceived)
 {
     addPreviewPath(pathReceived);
     onDropped();
@@ -264,7 +271,7 @@ void PersistentController::onFileDialogButton(const QVariant &pathReceived)
 
 void PersistentController::removeFolders(const QList<QVariant> indexes)
 {
-    for(int index = indexes.count()-1 ; index >= 0 ; --index)
+    for (int index = indexes.count() - 1; index >= 0; --index)
     {
         int indexToRemove = indexes[index].toInt();
         m_persistentSequences.removeOne(m_sequences->at(indexToRemove));
@@ -275,24 +282,21 @@ void PersistentController::removeFolders(const QList<QVariant> indexes)
     emit informationChanged();
 }
 
-
-
-//add persistent object
-void PersistentController::addPersistentObject(PersistentSequence *sequence)
+// add persistent object
+void PersistentController::addPersistentObject(PersistentSequence* sequence)
 {
-    if(!m_persistentSequences.contains(sequence))
+    if (!m_persistentSequences.contains(sequence))
     {
         m_persistentSequences.append(sequence);
         m_sequences->append(sequence);
         save();
     }
-
 }
 
-//update information of an already existing object
-void PersistentController::updatePersistentObject(PersistentSequence *sequence)
+// update information of an already existing object
+void PersistentController::updatePersistentObject(PersistentSequence* sequence)
 {
-    if(m_persistentSequences.contains(sequence))
+    if (m_persistentSequences.contains(sequence))
     {
         int index = findIndex(sequence);
         m_persistentSequences.replace(index, sequence);
@@ -302,35 +306,34 @@ void PersistentController::updatePersistentObject(PersistentSequence *sequence)
 
 PersistentSequence* PersistentController::getElement(const int index)
 {
-    if(index<m_persistentSequences.size())
+    if (index < m_persistentSequences.size())
         return m_persistentSequences.at(index);
     return nullptr;
 }
 
-QList<PersistentSequence *> PersistentController::getPersistentSequences()
+QList<PersistentSequence*> PersistentController::getPersistentSequences()
 {
     return m_persistentSequences;
 }
 
-//return index if the sequence is inside , else return -1
-int PersistentController::findIndex(PersistentSequence *sequence)
+// return index if the sequence is inside , else return -1
+int PersistentController::findIndex(PersistentSequence* sequence)
 {
-    int i=0;
-    foreach(PersistentSequence * s, m_persistentSequences)
+    int i = 0;
+    foreach (PersistentSequence* s, m_persistentSequences)
     {
-        if(s->equals(sequence))
+        if (s->equals(sequence))
             return i;
         i++;
     }
     return -1;
 }
 
-
-//write all seq in a json object
-void PersistentController::write(QJsonObject &json)
+// write all seq in a json object
+void PersistentController::write(QJsonObject& json)
 {
     QJsonArray sequenceArray;
-    for(int i = 0; i<m_persistentSequences.count(); i++)
+    for (int i = 0; i < m_persistentSequences.count(); i++)
     {
         QJsonObject sequenceObject;
         m_persistentSequences.at(i)->write(sequenceObject);
@@ -344,9 +347,9 @@ bool PersistentController::save()
 {
     QFile saveFile(m_saveFilePath);
     saveFile.remove();
-    if(!saveFile.open(QIODevice::WriteOnly))
+    if (!saveFile.open(QIODevice::WriteOnly))
     {
-        qDebug()<<"Can not open!";
+        qDebug() << "Can not open!";
         return false;
     }
 
@@ -356,25 +359,24 @@ bool PersistentController::save()
     QJsonDocument saveDoc(progressObject);
     saveFile.write(saveDoc.toJson());
     saveFile.close();
-    qDebug()<<"Saved!";
+    qDebug() << "Saved!";
     return true;
 }
 
-void PersistentController::read(const QJsonObject &json)
+void PersistentController::read(const QJsonObject& json)
 {
     QJsonArray sequenceArray = json["sequences"].toArray();
     for (int seqIndex = 0; seqIndex < sequenceArray.size(); ++seqIndex)
     {
-        QJsonObject sequenceObject = sequenceArray[seqIndex].toObject();
-        PersistentSequence *s = new PersistentSequence(this);
+        QJsonObject         sequenceObject = sequenceArray[seqIndex].toObject();
+        PersistentSequence* s              = new PersistentSequence(this);
 
         s->read(sequenceObject);
 
-        if(QFileInfo(s->get_path()).exists())
+        if (QFileInfo(s->getPath()).exists())
         {
             m_persistentSequences.append(s);
         }
-
     }
 }
 
@@ -382,9 +384,9 @@ bool PersistentController::load()
 {
     QFile loadFile(m_saveFilePath);
 
-    if(!loadFile.open(QIODevice::ReadOnly))
+    if (!loadFile.open(QIODevice::ReadOnly))
     {
-        qDebug()<<"Can not open!";
+        qDebug() << "Can not open!";
         return false;
     }
 
@@ -395,14 +397,14 @@ bool PersistentController::load()
     m_persistentSequences.clear();
     read(loadDoc.object());
 
-    qDebug()<<"Loaded! "<<QFileInfo(loadFile).absoluteFilePath();
+    qDebug() << "Loaded! " << QFileInfo(loadFile).absoluteFilePath();
     loadFile.close();
     return true;
 }
 
 void PersistentController::resetStatusForUnsentSequenceFiles()
 {
-    foreach(PersistentSequence * s, m_persistentSequences)
+    foreach (PersistentSequence* s, m_persistentSequences)
     {
         s->resetStatusForUnsentFiles();
     }
@@ -414,9 +416,9 @@ void PersistentController::resetProperties()
     set_totalSize(0);
     m_sequences->clear();
 
-    foreach(PersistentSequence * s, m_persistentSequences)
+    foreach (PersistentSequence* s, m_persistentSequences)
     {
-        if(s->get_status() == SequenceStatus::SUCCESS)
+        if (s->getSequenceStatus() == SequenceStatus::SUCCESS)
         {
             s->resetInformation();
         }
