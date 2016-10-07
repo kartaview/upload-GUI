@@ -29,8 +29,8 @@ PersistentController::PersistentController(QObject* parent)
 
 void PersistentController::reset()
 {
-    set_totalFiles(0);
-    set_totalSize(0);
+    setTotalFiles(0);
+    setTotalSize(0);
     m_sequences->clear();
     m_persistentSequences.clear();
     m_enteredDirPath.clear();
@@ -101,12 +101,12 @@ bool PersistentController::checkMetadata(const QString& path, PersistentSequence
         itMetaData.next();
         if (itMetaData.fileInfo().size() < kGigaByte && itMetaData.fileInfo().suffix() == "gz")
         {
-            sequence->set_metadata(new Metadata(itMetaData.filePath(), sequence));
-            totalSize += sequence->get_metadata()->getSize();
+            sequence->setMetadata(new Metadata(itMetaData.filePath(), sequence));
+            totalSize += sequence->getMetadata()->getSize();
             return true;
         }
     }
-    sequence->set_metadata(new Metadata("", sequence));
+    sequence->setMetadata(new Metadata("", sequence));
     return false;
 }
 
@@ -132,7 +132,7 @@ void PersistentController::checkPhotosExif(const QString& path, PersistentSequen
 
     if (photos.size())
     {
-        sequence->set_photos(photos);
+        sequence->setPhotos(photos);
         sequence->addPhotoInfo(path, totalSize);
         addPersistentObject(sequence);
     }
@@ -163,7 +163,7 @@ void PersistentController::checkVideos(const QString& path, PersistentSequence* 
     if (videos.size())  // exists valid videos
     {
         qSort(videos.begin(), videos.end(), Video::lessThan);
-        sequence->set_videos(videos);
+        sequence->setVideos(videos);
         sequence->addVideoInfo(path, totalSize);
         addPersistentObject(sequence);
     }
@@ -256,11 +256,11 @@ void PersistentController::calculateTotalInformation()
         if (s->getSequenceStatus() != SequenceStatus::SUCCESS && s->size())
         {
             sum += s->size();
-            noFiles += s->get_sequence()->get_photo_no();
+            noFiles += s->filesNo();
         }
     }
-    set_totalFiles(noFiles);
-    set_totalSize(sum);
+    setTotalFiles(noFiles);
+    setTotalSize(sum);
 }
 
 void PersistentController::onFileDialogButton(const QVariant& pathReceived)
@@ -412,8 +412,8 @@ void PersistentController::resetStatusForUnsentSequenceFiles()
 
 void PersistentController::resetProperties()
 {
-    set_totalFiles(0);
-    set_totalSize(0);
+    setTotalFiles(0);
+    setTotalSize(0);
     m_sequences->clear();
 
     foreach (PersistentSequence* s, m_persistentSequences)
@@ -423,4 +423,16 @@ void PersistentController::resetProperties()
             s->resetInformation();
         }
     }
+}
+
+void PersistentController::setTotalFiles(const int totalFiles)
+{
+    m_totalFiles = totalFiles;
+    emit totalFilesChanged(totalFiles);
+}
+
+void PersistentController::setTotalSize(const long long& totalSize)
+{
+    m_totalSize = totalSize;
+    emit totalSizeChanged(totalSize);
 }

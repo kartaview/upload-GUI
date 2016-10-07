@@ -8,7 +8,7 @@
 class LoginController : public QObject
 {
     Q_OBJECT
-    QML_WRITABLE_PROPERTY(bool, isLoggedIn)
+    QML_READONLY_PROPERTY(bool, isLoggedIn)
 
 public:
     LoginController(OSMLogin* osmLogin);
@@ -19,10 +19,10 @@ public slots:
 
     void loginSuccess();
     void loginFailedMessage();
-
     void checkIfLoggedIn();
 
     QString getClientToken();
+    void setIsLoggedIn(const bool isLoggedIn);
 
 private:
     void loadUserInfoFromFile();

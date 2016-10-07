@@ -118,9 +118,9 @@ void UploadManager::requestNewSequence(PersistentSequence* sequence, const int s
 
     QFile*     file(nullptr);
     QByteArray buffer(nullptr);
-    if (!sequence->get_metadata()->getPath().isEmpty())
+    if (!sequence->getMetadata()->getPath().isEmpty())
     {
-        file = new QFile(sequence->get_metadata()->getPath());
+        file = new QFile(sequence->getMetadata()->getPath());
         if (!file->open(QIODevice::ReadOnly))
         {
             qDebug() << "Can not open!";
@@ -136,11 +136,11 @@ void UploadManager::requestNewSequence(PersistentSequence* sequence, const int s
     QHttpMultiPart* map = new QHttpMultiPart(QHttpMultiPart::FormDataType);
     QHttpPart       filePart;
 
-    double lat = sequence->getSequence()->get_current_lat();
-    double lng = sequence->getSequence()->get_current_lng();
+    double lat = sequence->getLat();
+    double lng = sequence->getLng();
 
     bool emptyData = false;
-    if ((buffer.isEmpty() && sequence->get_videos().size()) || sequence->getToken().isEmpty() ||
+    if ((buffer.isEmpty() && sequence->getVideos().size()) || sequence->getToken().isEmpty() ||
         !(lat && lng))
     {
         emptyData = true;
@@ -164,13 +164,13 @@ void UploadManager::requestNewSequence(PersistentSequence* sequence, const int s
         QHttpPart platformNamePart;
         platformNamePart.setHeader(QNetworkRequest::ContentDispositionHeader,
                                    QVariant("form-data; name=\"platformName\""));
-        platformNamePart.setBody(sequence->get_metadata()->getPlatformName().toLatin1());
+        platformNamePart.setBody(sequence->getMetadata()->getPlatformName().toLatin1());
         map->append(platformNamePart);
 
         QHttpPart platformVersionPart;
         platformVersionPart.setHeader(QNetworkRequest::ContentDispositionHeader,
                                       QVariant("form-data; name=\"platformVersion\""));
-        platformVersionPart.setBody(sequence->get_metadata()->getPlatformVersion().toLatin1());
+        platformVersionPart.setBody(sequence->getMetadata()->getPlatformVersion().toLatin1());
         map->append(platformVersionPart);
 
         QHttpPart clientTokenPart;
@@ -196,7 +196,7 @@ void UploadManager::requestNewSequence(PersistentSequence* sequence, const int s
 
     const QString url(kProtocol + kBaseProductionUrl + kVersion + kCommandSequence);
     qDebug() << "Request URL: " << url;
-    qDebug() << "Metadata: " << sequence->get_metadata()->getPath();
+    qDebug() << "Metadata: " << sequence->getMetadata()->getPath();
     if (!emptyData)
     {
         request->post(url, map);
@@ -277,13 +277,13 @@ void UploadManager::requestSequenceFinished(
     QMap<QString, QString> map = QMap<QString, QString>();
     bool emptyData = false;
 
-    if (sequence->getSequence()->get_id() < 0)
+    if (sequence->sequenceId() < 0)
     {
         emptyData = true;
     }
     else
     {
-        map.insert("sequenceId", QString::number(sequence->getSequence()->get_id()));
+        map.insert("sequenceId", QString::number(sequence->sequenceId()));
         map.insert("access_token", sequence->getToken());
     }
 
@@ -311,7 +311,7 @@ void UploadManager::onSequenceFinishedFailed(PersistentSequence* sequence, const
 void UploadManager::requestNewPhoto(PersistentSequence* sequence, const int sequenceIndex,
                                     const int photoIndex)
 {
-    const QList<Photo*> photoList = sequence->get_photos();
+    const QList<Photo*> photoList = sequence->getPhotos();
 
     if (m_uploadPaused || photoIndex >= photoList.count())
     {
@@ -391,7 +391,7 @@ void UploadManager::requestNewPhoto(PersistentSequence* sequence, const int sequ
     double lng = currentPhoto->getLng();
 
     bool isEmpty    = false;
-    int  sequenceId = sequence->getSequence()->get_id();
+    int  sequenceId = sequence->sequenceId();
 
     if (buffer.isEmpty() || sequenceId < 0 || photoIndex < 0 || !(lat && lng))
     {
@@ -456,7 +456,7 @@ void UploadManager::onNewPhotoFailed(PersistentSequence* sequence, const int seq
 void UploadManager::requestNewVideo(PersistentSequence* sequence, const int sequenceIndex,
                                     const int videoIndex)
 {
-    const QList<Video*> videoList = sequence->get_videos();
+    const QList<Video*> videoList = sequence->getVideos();
 
     if (m_uploadPaused || videoIndex >= videoList.count())
     {
@@ -467,7 +467,7 @@ void UploadManager::requestNewVideo(PersistentSequence* sequence, const int sequ
     connect(request, SIGNAL(newBytesDifference(qint64)), this, SIGNAL(uploadProgress(qint64)));
 
     request->setHandlerFunc([=](QNetworkReply* reply) {
-        currentVideo->set_status(FileStatus::BUSY);
+        currentVideo->setStatus(FileStatus::BUSY);
         OSVStatusCode statusCode;
         bool          sequenceFailed = false;
         if (reply && !m_uploadPaused)
@@ -486,18 +486,18 @@ void UploadManager::requestNewVideo(PersistentSequence* sequence, const int sequ
             if (statusCode == OSVStatusCode::SUCCESS)
             {
                 qDebug() << "Success, video index: " << videoIndex
-                         << " | videoPath: " << currentVideo->get_path();
+                         << " | videoPath: " << currentVideo->getPath();
                 disconnect(request, SIGNAL(newBytesDifference(qint64)), this,
                            SIGNAL(uploadProgress(qint64)));
                 if (videoIndex < videoList.count())
                 {
-                    currentVideo->set_status(FileStatus::DONE);
+                    currentVideo->setStatus(FileStatus::DONE);
                 }
                 emit videoUploaded(sequenceIndex, videoIndex);
             }
             else if (statusCode == OSVStatusCode::DUPLICATE)
             {
-                currentVideo->set_status(FileStatus::DONE);
+                currentVideo->setStatus(FileStatus::DONE);
                 emit videoUploaded(sequenceIndex, videoIndex);
             }
             else
@@ -523,7 +523,7 @@ void UploadManager::requestNewVideo(PersistentSequence* sequence, const int sequ
     QFile*     videoFile(nullptr);
     QByteArray buffer(nullptr);
 
-    videoFile = new QFile(currentVideo->get_path());
+    videoFile = new QFile(currentVideo->getPath());
     if (!videoFile->open(QIODevice::ReadOnly))
     {
         qDebug() << "Can not open image!";
@@ -536,7 +536,7 @@ void UploadManager::requestNewVideo(PersistentSequence* sequence, const int sequ
     QHttpMultiPart* map = new QHttpMultiPart(QHttpMultiPart::FormDataType);
 
     bool isEmpty    = false;
-    int  sequenceId = sequence->getSequence()->get_id();
+    int  sequenceId = sequence->sequenceId();
 
     if (buffer.isEmpty() || sequenceId < 0 || videoIndex < 0)
     {
@@ -575,10 +575,10 @@ void UploadManager::requestNewVideo(PersistentSequence* sequence, const int sequ
 
     const QString url(kProtocol + kBaseProductionUrl + kVersion + kCommandVideo);
     qDebug() << "Request URL : " << url << " SequenceIndex: " << videoIndex
-             << " | Video fileName: " << QFileInfo(currentVideo->get_path()).baseName();
+             << " | Video fileName: " << QFileInfo(currentVideo->getPath()).baseName();
     if (!isEmpty)
     {
-        currentVideo->set_status(FileStatus::BUSY);
+        currentVideo->setStatus(FileStatus::BUSY);
         request->post(url, map);
     }
 

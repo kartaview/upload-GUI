@@ -1,31 +1,66 @@
 #ifndef UPLOADCONTROLLER_H
 #define UPLOADCONTROLLER_H
 
-#include "qqmlhelpers.h"
 #include "UploadManager.h"
+#include "elapsedtimecounter.h"
 #include "logincontroller.h"
 #include "persistentcontroller.h"
-#include "elapsedtimecounter.h"
+#include "qqmlhelpers.h"
 
 class UploadController : public QObject
 {
     Q_OBJECT
-    QML_WRITABLE_PROPERTY (bool, isUploadPaused)
-    QML_WRITABLE_PROPERTY (int, remainingTime)
-    QML_WRITABLE_PROPERTY (int, uploadedNoFiles)
-    QML_WRITABLE_PROPERTY (qint64, uploadedSize)
-    QML_WRITABLE_PROPERTY (int, percentage)
-    QML_WRITABLE_PROPERTY (qint64, uploadSpeed)
-    QML_WRITABLE_PROPERTY (bool, isUploadStarted)
-    QML_WRITABLE_PROPERTY (qint64, elapsedTime)
-    QML_WRITABLE_PROPERTY (bool, isError)
-
-    QML_WRITABLE_PROPERTY(bool, isUploadComplete)
+    Q_PROPERTY(bool isUploadPaused READ isUploadPaused NOTIFY isUploadPausedChanged)
+    Q_PROPERTY(int remainingTime READ remainingTime NOTIFY remainingTimeChanged)
+    Q_PROPERTY(int uploadedNoFiles READ uploadedNoFiles NOTIFY uploadedNoFilesChanged)
+    Q_PROPERTY(long long uploadedSize READ uploadedSize NOTIFY uploadedSizeChanged)
+    Q_PROPERTY(int percentage READ percentage NOTIFY percentageChanged)
+    Q_PROPERTY(long long uploadSpeed READ uploadSpeed NOTIFY uploadSpeedChanged)
+    Q_PROPERTY(bool isUploadStarted READ isUploadStarted NOTIFY isUploadStartedChanged)
+    Q_PROPERTY(long long elapsedTime READ elapsedTime NOTIFY elapsedTimeChanged)
+    Q_PROPERTY(bool isError READ isError NOTIFY isErrorChanged)
+    Q_PROPERTY(bool isUploadComplete READ isUploadComplete NOTIFY isUploadCompleteChanged)
 
 public:
-    explicit UploadController(LoginController* lc, PersistentController* pc, QObject *parent = 0);
+    explicit UploadController(LoginController* lc, PersistentController* pc, QObject* parent = 0);
     ~UploadController();
     void reset();
+
+    // Getters
+    bool      isUploadPaused() const;
+    int       remainingTime() const;
+    int       uploadedNoFiles() const;
+    long long uploadedSize() const;
+    int       percentage() const;
+    long long uploadSpeed() const;
+    bool      isUploadStarted() const;
+    long long elapsedTime() const;
+    bool      isError() const;
+    bool      isUploadComplete() const;
+
+    // Setters
+    void setIsUploadPaused(const bool isUploadPaused);
+    void setRemainingTime(const int remainingTime);
+    void setUploadedNoFiles(const int uploadedNoFiles);
+    void setUploadedSize(const long long& uploadedSize);
+    void setPercentage(const int percentage);
+    void setUploadSpeed(const long long& uploadSpeed);
+    void setIsUploadStarted(const bool isUploadStarted);
+    void setElapsedTime(const long long& elapsedTime);
+    void setIsError(const bool isError);
+    void setIsUploadComplete(const bool isUploadComplete);
+
+signals:
+    void isUploadPausedChanged();
+    void remainingTimeChanged();
+    void uploadedNoFilesChanged();
+    void uploadedSizeChanged();
+    void percentageChanged();
+    void uploadSpeedChanged();
+    void isUploadStartedChanged();
+    void elapsedTimeChanged();
+    void isErrorChanged();
+    void isUploadCompleteChanged();
 
 public slots:
     void UploadSequence(PersistentSequence* sequence, const int sequenceIndex);
@@ -45,13 +80,25 @@ public slots:
     Q_INVOKABLE void errorAknowledged();
 
 private:
-    void selectNewSequence();
+    void   selectNewSequence();
     double calculateProgressPercentage();
 
-    UploadManager*          m_uploadManager;
-    LoginController*        m_loginController;
-    PersistentController*   m_persistentController;
-    ElapsedTimeCounter*     m_elapsedTimeCounter;
+private:
+    bool      m_isUploadPaused;
+    int       m_remainingTime;
+    int       m_uploadedNoFiles;
+    long long m_uploadedSize;
+    int       m_percentage;
+    long long m_uploadSpeed;
+    bool      m_isUploadStarted;
+    long long m_elapsedTime;
+    bool      m_isError;
+    bool      m_isUploadComplete;
+
+    UploadManager*        m_uploadManager;
+    LoginController*      m_loginController;
+    PersistentController* m_persistentController;
+    ElapsedTimeCounter*   m_elapsedTimeCounter;
 };
 
-#endif // UPLOADCONTROLLER_H
+#endif  // UPLOADCONTROLLER_H

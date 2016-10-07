@@ -130,7 +130,7 @@ Window {
                             width : 50
                             horizontalAlignment: Text.AlignLeft
                             delegate : Text {
-                                text: model.sequence.photo_no
+                                text: model.filesNo
                                 horizontalAlignment: Text.AlignLeft;
                             }
                         }
@@ -149,7 +149,7 @@ Window {
                             width : 90
                             horizontalAlignment: Text.AlignLeft
                             delegate : Text {
-                                text : model.sequence.id < 0 ? "-" : model.sequence.id
+                                text : model.sequenceId < 0 ? "-" : model.sequenceId
                                 horizontalAlignment: Text.AlignLeft;
                             }
                         }

@@ -1,10 +1,14 @@
 #ifndef PERSISTENTSEQUENCE_H
 #define PERSISTENTSEQUENCE_H
 
+#include "jsonserializable.h"
 #include "metadata.h"
+#include "photo.h"
 #include "video.h"
 #include <QDebug>
-#include <Sequence.h>
+#include <QJsonArray>
+#include <QJsonDocument>
+
 enum class SequenceStatus : int
 {
     BUSY          = 2,
@@ -18,16 +22,11 @@ class PersistentSequence : public JsonSerializable
 {
     Q_OBJECT
 
-    QML_WRITABLE_PROPERTY(Metadata*, metadata)
-    QML_WRITABLE_PROPERTY(QString, name)
-
-    QML_WRITABLE_PROPERTY(QList<Photo*>, photos)
-    QML_WRITABLE_PROPERTY(QList<Video*>, videos)
-    QML_WRITABLE_PROPERTY(Sequence*, sequence)
-
+    Q_PROPERTY(int sequenceId READ sequenceId NOTIFY sequenceIdChanged)
     Q_PROPERTY(SequenceType type READ type)
     Q_PROPERTY(QString name READ name)
     Q_PROPERTY(long long size READ size)
+    Q_PROPERTY(int filesNo READ filesNo)
 
 public:
     explicit PersistentSequence(QObject* parent = 0);
@@ -45,12 +44,6 @@ public:
     void addVideoInfo(const QString& path, const qint64& totalSize);
     bool equals(PersistentSequence* sequence);
 
-    using JsonSerializable::read;  // compile
-    void read(const QJsonObject& jsonObj);
-
-    using JsonSerializable::write;
-    void write(QJsonObject& jsonObj);
-
     bool isFileSent(int index);
     bool areAllFilesSent();
     void setFileSentOnIndex(int index);
@@ -60,33 +53,62 @@ public:
     void resetStatusForUnsentFiles();
     void resetInformation();
 
+    using JsonSerializable::read;
+    void read(const QJsonObject& jsonObj);
+
+    using JsonSerializable::write;
+    void write(QJsonObject& jsonObj);
+
     // Getters
+    int            sequenceId() const;
     QString        getPath() const;
     QString        name() const;
     SequenceStatus getSequenceStatus() const;
     SequenceType   type() const;
-    Sequence*      getSequence() const;
     QString        getToken() const;
     long long      size() const;
+    int            filesNo() const;
+    float          getLat() const;
+    float          getLng() const;
+    QList<Photo*>  getPhotos() const;
+    QList<Video*>  getVideos() const;
+    Metadata*      getMetadata() const;
 
     // Setters
+    void setSequenceId(const int sequenceId);
     void setPath(const QString& path);
     void setName(const QString& name);
     void setSequenceStatus(const SequenceStatus status);
     void setType(const SequenceType type);
-    void setSequence(Sequence* sequence);
     void setToken(const QString& token);
     void setSize(const long long& size);
+    void setFilesNo(const int filesNo);
+    void setLat(const float& lat);
+    void setLng(const float& lng);
+    void setPhotos(const QList<Photo*> photos);
+    void setVideos(const QList<Video*> videos);
+    void setMetadata(Metadata* metadata);
+
+signals:
+    void sequenceIdChanged();
 
 private:
     void setFolderPathAndName(const QString& folderPath);
-    SequenceType   m_type;
     QVector<bool>* m_filesSentIndex;
 
+    int            m_sequenceId;
     QString        m_path;
+    QString        m_name;
     SequenceStatus m_status;
+    SequenceType   m_type;
     long long      m_size;
     QString        m_token;
+    int            m_filesNo;
+    float          m_lat;
+    float          m_lng;
+    QList<Photo*>  m_photos;
+    QList<Video*>  m_videos;
+    Metadata*      m_metadata;
 };
 
 #endif  // PERSISTENTSEQUENCE_H

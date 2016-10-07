@@ -50,7 +50,7 @@ void LoginController::login()
 {
     const bool userFileExists = checkIfUserFileExists();
     m_osmLogin->setIsLoggedIn(userFileExists);
-    set_isLoggedIn(userFileExists);
+    setIsLoggedIn(userFileExists);
 
     qDebug() << "IS LOGGED IN: " << m_osmLogin->isLoggedIn();
     if (!userFileExists)  // if the user is not logged in (userDetails.ini file does not exist)
@@ -68,7 +68,7 @@ void LoginController::logout()
     if (checkIfUserFileExists())
     {
         QFile::remove(m_tokenFilePath);
-        set_isLoggedIn(false);
+        setIsLoggedIn(false);
         m_osmLogin->setIsLoggedIn(false);
     }
 }
@@ -78,7 +78,7 @@ void LoginController::loginSuccess()
     // after the user logs in, a request is sent to obtain user information (username, external user
     // id, client token) used for uploading photos
     m_osmLogin->setTokens(m_requestToken, m_secretToken);
-    set_isLoggedIn(true);
+    setIsLoggedIn(true);
     qDebug() << "LOGIN SUCCESSFUL";
     requestAccessTokenFromOSV();
 }
@@ -130,7 +130,7 @@ void LoginController::checkIfLoggedIn()
         loadUserInfoFromFile();  // workaround for loading the user info at startup
     }
 
-    set_isLoggedIn(userFileExists);
+    setIsLoggedIn(userFileExists);
 }
 
 void LoginController::requestAccessTokenFromOSV()
@@ -184,4 +184,10 @@ void LoginController::requestAccessTokenFromOSV()
 QString LoginController::getClientToken()
 {
     return m_accessToken;
+}
+
+void LoginController::setIsLoggedIn(const bool isLoggedIn)
+{
+    m_isLoggedIn = isLoggedIn;
+    emit isLoggedInChanged(isLoggedIn);
 }

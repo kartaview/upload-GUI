@@ -53,7 +53,7 @@ Dialog {
                     title : qsTr("Track ID")
                     width : 100
                     delegate : Text {
-                        text: model.sequence.id
+                        text: model.sequenceId
                         horizontalAlignment: Text.AlignCenter;
                     }
                 }

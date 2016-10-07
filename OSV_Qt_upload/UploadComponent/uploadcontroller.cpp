@@ -59,21 +59,21 @@ void UploadController::selectNewSequence()
     }
     if (sequenceIndex < m_persistentController->getPersistentSequences().count())
     {
-        set_isUploadStarted(true);
+        setIsUploadStarted(true);
         UploadSequence(m_persistentController->getElement(sequenceIndex), sequenceIndex);
     }
     else  // here all the upload is finished
     {
         m_elapsedTimeCounter->stop();
-        set_isUploadComplete(true);
+        setIsUploadComplete(true);
     }
 }
 
 void UploadController::UploadSequence(PersistentSequence* sequence, const int sequenceIndex)
 {
     sequence->setToken(m_loginController->getClientToken());
-    const int photoCount(sequence->get_photos().count());
-    const int videoCount(sequence->get_videos().count());
+    const int photoCount(sequence->getPhotos().count());
+    const int videoCount(sequence->getVideos().count());
 
     switch (sequence->getSequenceStatus())
     {
@@ -115,7 +115,7 @@ void UploadController::UploadSequence(PersistentSequence* sequence, const int se
         case SequenceStatus::FAILED:  // TODO same functionality as in BUSY, maybe eliminate
                                       // Failed/Busy
             onInformationChanged();
-            if (sequence->get_sequence()->get_id() > -1)
+            if (sequence->sequenceId() > -1)
             {
                 if (photoCount)
                     m_uploadManager->requestNewPhoto(sequence, sequenceIndex,
@@ -143,18 +143,18 @@ void UploadController::onSequenceCreated(int sequenceIndex)
     PersistentSequence* sequence = m_persistentController->getElement(sequenceIndex);
     m_persistentController->updatePersistentObject(sequence);
 
-    if (sequence->get_photos().size())
+    if (sequence->getPhotos().size())
     {
         qDebug() << "New photo sequence!";
-        for (int index = 0; index < kCountThreads && index < sequence->get_photos().size(); index++)
+        for (int index = 0; index < kCountThreads && index < sequence->getPhotos().size(); index++)
         {
             m_uploadManager->requestNewPhoto(sequence, sequenceIndex, index);
         }
     }
-    else if (sequence->get_videos().size())
+    else if (sequence->getVideos().size())
     {
         qDebug() << "New video sequence!";
-        for (int index = 0; index < kCountThreads && index < sequence->get_videos().size(); index++)
+        for (int index = 0; index < kCountThreads && index < sequence->getVideos().size(); index++)
         {
             m_uploadManager->requestNewVideo(sequence, sequenceIndex, index);
         }
@@ -182,7 +182,7 @@ void UploadController::onUploadProgress(qint64 bytesDiff)
     const int timeDiff = m_elapsedTimeCounter->getElapsedTime();
     int       remainingTimeSec;
     qint64    speed;
-    set_uploadedSize(m_uploadedSize + bytesDiff);
+    setUploadedSize(m_uploadedSize + bytesDiff);
     if (timeDiff > 0)
     {
         speed              = m_uploadedSize / timeDiff;  // Download Speed in B/s
@@ -190,28 +190,27 @@ void UploadController::onUploadProgress(qint64 bytesDiff)
         if (speed)
         {
             remainingTimeSec = remainingUp / speed;
-            set_uploadSpeed(speed);
-            set_remainingTime(remainingTimeSec);
+            setUploadSpeed(speed);
+            setRemainingTime(remainingTimeSec);
         }
     }
 
     if (m_uploadedSize > m_persistentController->get_totalSize())
     {
-        set_uploadedSize(m_persistentController->get_totalSize());
+        setUploadedSize(m_persistentController->get_totalSize());
     }
 
-    set_percentage(calculateProgressPercentage());
+    setPercentage(calculateProgressPercentage());
 }
 
 void UploadController::onPhotoUploaded(int sequenceIndex, int photoIndex)
 {
     PersistentSequence* sequence = m_persistentController->getElement(sequenceIndex);
-    QList<Photo*>       photos   = sequence->get_photos();
 
     if (!sequence->isFileSent(photoIndex))  // make sure is not duplicated
     {
         sequence->setFileSentOnIndex(photoIndex);
-        set_uploadedNoFiles(m_uploadedNoFiles + 1);
+        setUploadedNoFiles(m_uploadedNoFiles + 1);
         m_persistentController->updatePersistentObject(sequence);
     }
 
@@ -233,7 +232,7 @@ void UploadController::onVideoUploaded(int sequenceIndex, int videoIndex)
     if (!sequence->isFileSent(videoIndex))  // make sure is not duplicated
     {
         sequence->setFileSentOnIndex(videoIndex);
-        set_uploadedNoFiles(m_uploadedNoFiles + 1);
+        setUploadedNoFiles(m_uploadedNoFiles + 1);
         m_persistentController->updatePersistentObject(sequence);
     }
 
@@ -263,7 +262,7 @@ void UploadController::onSequenceFinished(int sequenceIndex)
 void UploadController::pauseUpload()
 {
     qDebug() << "pause upload";
-    set_isUploadPaused(true);
+    setIsUploadPaused(true);
     blockSignals(true);
     m_uploadManager->pauseUpload();
     m_elapsedTimeCounter->pause();
@@ -273,7 +272,7 @@ void UploadController::resumeUpload()
 {
     qDebug() << "resume upload ";
     blockSignals(false);
-    set_isUploadPaused(false);
+    setIsUploadPaused(false);
     m_elapsedTimeCounter->resume();
     m_uploadManager->resumeUpload();
     m_persistentController->resetStatusForUnsentSequenceFiles();
@@ -289,17 +288,17 @@ void UploadController::onInformationChanged()
     {
         if (s->getSequenceStatus() != SequenceStatus::SUCCESS)
         {
-            if (!s->get_metadata()->getPath().isEmpty() &&
+            if (!s->getMetadata()->getPath().isEmpty() &&
                 s->getSequenceStatus() != SequenceStatus::AVAILABLE)
             {
-                uploadedSize += s->get_metadata()->getSize();
+                uploadedSize += s->getMetadata()->getSize();
             }
 
             m_persistentController->updatePersistentObject(s);
 
             if (s->type() == PersistentSequence::SequenceType::PHOTO)
             {
-                const QList<Photo*> photos(s->get_photos());
+                const QList<Photo*> photos(s->getPhotos());
                 int                 photoIndex = 0;
                 while (photoIndex < photos.count())
                 {
@@ -315,16 +314,16 @@ void UploadController::onInformationChanged()
             }
             else if (s->type() == PersistentSequence::SequenceType::VIDEO)
             {
-                const QList<Video*> videos(s->get_videos());
+                const QList<Video*> videos(s->getVideos());
                 int                 videoIndex = 0;
                 while (videoIndex < videos.count())
                 {
                     if (s->isFileSent(videoIndex))
                     {
                         Video* currentVideo = videos[videoIndex];
-                        currentVideo->set_status(FileStatus::DONE);
+                        currentVideo->setStatus(FileStatus::DONE);
                         ++uploadedFiles;
-                        uploadedSize += currentVideo->get_size();
+                        uploadedSize += currentVideo->getSize();
                     }
                     ++videoIndex;
                 }
@@ -334,44 +333,44 @@ void UploadController::onInformationChanged()
         {
             if (s->type() == PersistentSequence::SequenceType::PHOTO)
             {
-                uploadedFiles += s->get_photos().size();
+                uploadedFiles += s->getPhotos().size();
             }
             else if (s->type() == PersistentSequence::SequenceType::VIDEO)
             {
-                uploadedFiles += s->get_videos().size();
+                uploadedFiles += s->getVideos().size();
             }
             uploadedSize += s->size();
         }
     }
 
-    set_uploadedNoFiles(uploadedFiles);
-    set_uploadedSize(uploadedSize);
+    setUploadedNoFiles(uploadedFiles);
+    setUploadedSize(uploadedSize);
 
     if (m_persistentController->get_totalSize())
     {
-        set_percentage(calculateProgressPercentage());
+        setPercentage(calculateProgressPercentage());
     }
     else
     {
-        set_percentage(0);
+        setPercentage(0);
     }
 }
 
 void UploadController::onErrorFound()  // send also a message
 {
-    set_isError(true);
+    setIsError(true);
     m_elapsedTimeCounter->stop();
 }
 
 void UploadController::errorAknowledged()
 {
-    set_isError(false);
+    setIsError(false);
     reset();
 }
 
 void UploadController::onElapsedTimeChanged()
 {
-    set_elapsedTime(m_elapsedTimeCounter->getElapsedTime());
+    setElapsedTime(m_elapsedTimeCounter->getElapsedTime());
 }
 
 void UploadController::resetUploadValues()
@@ -382,14 +381,126 @@ void UploadController::resetUploadValues()
 
 void UploadController::reset()
 {
-    set_isUploadStarted(false);
-    set_elapsedTime(0);
+    setIsUploadStarted(false);
+    setElapsedTime(0);
     m_elapsedTimeCounter->reset();
 
-    set_isUploadComplete(false);
-    set_uploadedNoFiles(0);
-    set_uploadedSize(0);
-    set_uploadSpeed(0);
-    set_percentage(0);
-    set_remainingTime(0);
+    setIsUploadComplete(false);
+    setUploadedNoFiles(0);
+    setUploadedSize(0);
+    setUploadSpeed(0);
+    setPercentage(0);
+    setRemainingTime(0);
+}
+
+// Getters
+bool UploadController::isUploadPaused() const
+{
+    return m_isUploadPaused;
+}
+
+int UploadController::remainingTime() const
+{
+    return m_remainingTime;
+}
+
+int UploadController::uploadedNoFiles() const
+{
+    return m_uploadedNoFiles;
+}
+
+long long UploadController::uploadedSize() const
+{
+    return m_uploadedSize;
+}
+
+int UploadController::percentage() const
+{
+    return m_percentage;
+}
+
+long long UploadController::uploadSpeed() const
+{
+    return m_uploadSpeed;
+}
+
+bool UploadController::isUploadStarted() const
+{
+    return m_isUploadStarted;
+}
+
+long long UploadController::elapsedTime() const
+{
+    return m_elapsedTime;
+}
+
+bool UploadController::isError() const
+{
+    return m_isError;
+}
+
+bool UploadController::isUploadComplete() const
+{
+    return m_isUploadComplete;
+}
+
+// Setters
+void UploadController::setIsUploadPaused(const bool isUploadPaused)
+{
+    m_isUploadPaused = isUploadPaused;
+    emit isUploadPausedChanged();
+}
+
+void UploadController::setRemainingTime(const int remainingTime)
+{
+    m_remainingTime = remainingTime;
+    emit remainingTimeChanged();
+}
+
+void UploadController::setUploadedNoFiles(const int uploadedNoFiles)
+{
+    m_uploadedNoFiles = uploadedNoFiles;
+    emit uploadedNoFilesChanged();
+}
+
+void UploadController::setUploadedSize(const long long& uploadedSize)
+{
+    m_uploadedSize = uploadedSize;
+    emit uploadedSizeChanged();
+}
+
+void UploadController::setPercentage(const int percentage)
+{
+    m_percentage = percentage;
+    emit percentageChanged();
+}
+
+void UploadController::setUploadSpeed(const long long& uploadSpeed)
+{
+    m_uploadSpeed = uploadSpeed;
+    emit uploadSpeedChanged();
+}
+
+void UploadController::setIsUploadStarted(const bool isUploadStarted)
+{
+    m_isUploadStarted = isUploadStarted;
+    emit isUploadStartedChanged();
+}
+
+void UploadController::setElapsedTime(const long long& elapsedTime)
+{
+    m_elapsedTime = elapsedTime;
+    emit elapsedTimeChanged();
+}
+
+void UploadController::setIsError(const bool isError)
+{
+    m_isError = isError;
+    emit isErrorChanged();
+}
+
+void UploadController::setIsUploadComplete(const bool isUploadComplete)
+{
+    m_isUploadComplete = isUploadComplete;
+    emit isUploadCompleteChanged();
 }

@@ -3,16 +3,16 @@
 
 PersistentSequence::PersistentSequence(QObject* parent)
     : JsonSerializable(parent)
-    , m_sequence(new Sequence())
+    , m_sequenceId(-1)
+    , m_size(0)
+    , m_filesNo(0)
     , m_metadata(nullptr)
     , m_path("")
     , m_name("")
-    , m_size(0)
     , m_type(SequenceType::NONE)
     , m_status(SequenceStatus::AVAILABLE)
     , m_filesSentIndex(new QVector<bool>())
 {
-    m_sequence->set_id(-1);
 }
 
 PersistentSequence::~PersistentSequence()
@@ -29,9 +29,9 @@ void PersistentSequence::setFolderPathAndName(const QString& folderPath)
 void PersistentSequence::addPhotoInfo(const QString& path, const qint64& totalSize)
 {
     setFolderPathAndName(path);
-    m_sequence->set_photo_no(m_photos.size());
-    m_sequence->set_current_lat(m_photos[0]->getLat());
-    m_sequence->set_current_lng(m_photos[0]->getLng());
+    setFilesNo(m_photos.size());
+    m_lat = m_photos[0]->getLat();
+    m_lng = m_photos[0]->getLng();
     setSize(totalSize);
     m_type = SequenceType::PHOTO;
 
@@ -45,7 +45,7 @@ void PersistentSequence::addPhotoInfo(const QString& path, const qint64& totalSi
 void PersistentSequence::addVideoInfo(const QString& path, const qint64& totalSize)
 {
     setFolderPathAndName(path);
-    m_sequence->set_photo_no(m_videos.count());
+    setFilesNo(m_videos.count());
     setSize(totalSize);
     m_type = SequenceType::VIDEO;
 
@@ -56,8 +56,8 @@ void PersistentSequence::addVideoInfo(const QString& path, const qint64& totalSi
     }
     double lat(0), lng(0);
     m_metadata->processVideoMetadata(lat, lng);
-    m_sequence->set_current_lat(lat);
-    m_sequence->set_current_lng(lng);
+    m_lat = lat;
+    m_lng = lng;
 }
 
 bool PersistentSequence::equals(PersistentSequence* sequence)
@@ -67,7 +67,7 @@ bool PersistentSequence::equals(PersistentSequence* sequence)
 
 void PersistentSequence::write(QJsonObject& jsonObj)
 {
-    jsonObj["id"]     = m_sequence->get_id();
+    jsonObj["id"]     = m_sequenceId;
     jsonObj["path"]   = m_path;
     jsonObj["status"] = (int)m_status;
 
@@ -87,10 +87,10 @@ void PersistentSequence::read(const QJsonObject& jsonObj)
 {
     if (jsonObj.contains("id"))
     {
-        this->m_sequence->set_id(jsonObj["id"].toInt());
-        if (m_sequence->get_id() == 0)
+        this->setSequenceId(jsonObj["id"].toInt());
+        if (m_sequenceId == 0)
         {
-            this->m_sequence->set_id(jsonObj["id"].toString().toInt());
+            this->setSequenceId(jsonObj["id"].toString().toInt());
         }
     }
 
@@ -101,7 +101,7 @@ void PersistentSequence::read(const QJsonObject& jsonObj)
 
     if (jsonObj.contains("status"))
     {
-        setSequenceStatus((SequenceStatus)jsonObj["status"].toInt());
+        this->m_status = (SequenceStatus)jsonObj["status"].toInt();
     }
 
     if (jsonObj.contains("metadata"))
@@ -138,9 +138,9 @@ void PersistentSequence::resetStatusForUnsentFiles()
     for (int index = 0; index < m_videos.size(); ++index)
     {
         if (m_filesSentIndex->at(index) == false &&
-            m_videos[index]->get_status() == FileStatus::BUSY)
+            m_videos[index]->getStatus() == FileStatus::BUSY)
         {
-            m_videos[index]->set_status(FileStatus::AVAILABLE);
+            m_videos[index]->setStatus(FileStatus::AVAILABLE);
         }
     }
 
@@ -160,7 +160,7 @@ int PersistentSequence::getIndexOfNextAvailableVideo()
     for (int index = 0; index < m_videos.size(); ++index)
     {
         if (m_filesSentIndex->at(index) == false &&
-            m_videos[index]->get_status() == FileStatus::AVAILABLE)
+            m_videos[index]->getStatus() == FileStatus::AVAILABLE)
         {
             return index;
         }
@@ -187,9 +187,15 @@ void PersistentSequence::setFileSentOnIndex(int index)
 void PersistentSequence::resetInformation()
 {
     setSize(0);
-    m_sequence->set_photo_no(0);
+    setFilesNo(0);
     m_photos.clear();
     m_videos.clear();
+}
+
+// Getters
+int PersistentSequence::sequenceId() const
+{
+    return m_sequenceId;
 }
 
 QString PersistentSequence::getPath() const
@@ -212,11 +218,6 @@ PersistentSequence::SequenceType PersistentSequence::type() const
     return m_type;
 }
 
-Sequence* PersistentSequence::getSequence() const
-{
-    return m_sequence;
-}
-
 QString PersistentSequence::getToken() const
 {
     return m_token;
@@ -225,6 +226,43 @@ QString PersistentSequence::getToken() const
 long long PersistentSequence::size() const
 {
     return m_size;
+}
+
+int PersistentSequence::filesNo() const
+{
+    return m_filesNo;
+}
+
+float PersistentSequence::getLat() const
+{
+    return m_lat;
+}
+
+float PersistentSequence::getLng() const
+{
+    return m_lng;
+}
+
+QList<Photo*> PersistentSequence::getPhotos() const
+{
+    return m_photos;
+}
+
+QList<Video*> PersistentSequence::getVideos() const
+{
+    return m_videos;
+}
+
+Metadata* PersistentSequence::getMetadata() const
+{
+    return m_metadata;
+}
+
+// Setters
+void PersistentSequence::setSequenceId(const int sequenceId)
+{
+    m_sequenceId = sequenceId;
+    emit sequenceIdChanged();
 }
 
 void PersistentSequence::setPath(const QString& path)
@@ -242,11 +280,6 @@ void PersistentSequence::setSequenceStatus(const SequenceStatus status)
     m_status = status;
 }
 
-void PersistentSequence::setSequence(Sequence* sequence)
-{
-    m_sequence = sequence;
-}
-
 void PersistentSequence::setToken(const QString& token)
 {
     m_token = token;
@@ -255,4 +288,34 @@ void PersistentSequence::setToken(const QString& token)
 void PersistentSequence::setSize(const long long& size)
 {
     m_size = size;
+}
+
+void PersistentSequence::setFilesNo(const int filesNo)
+{
+    m_filesNo = filesNo;
+}
+
+void PersistentSequence::setLat(const float& lat)
+{
+    m_lat = lat;
+}
+
+void PersistentSequence::setLng(const float& lng)
+{
+    m_lng = lng;
+}
+
+void PersistentSequence::setPhotos(const QList<Photo*> photos)
+{
+    m_photos = photos;
+}
+
+void PersistentSequence::setVideos(const QList<Video*> videos)
+{
+    m_videos = videos;
+}
+
+void PersistentSequence::setMetadata(Metadata* metadata)
+{
+    m_metadata = metadata;
 }
