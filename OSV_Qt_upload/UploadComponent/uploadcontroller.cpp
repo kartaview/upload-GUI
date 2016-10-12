@@ -6,21 +6,19 @@ UploadController::UploadController(LoginController* lc, PersistentController* pc
     , m_persistentController(pc)
     , m_isUploadPaused(false)
     , m_elapsedTimeCounter(new ElapsedTimeCounter())
-    , m_uploadManager(new UploadManager())
+    , m_OSVAPI(new OSVAPI())
     , m_isUploadComplete(false)
     , m_isError(false)
 {
     reset();
     onInformationChanged();
 
-    connect(m_uploadManager, SIGNAL(errorFound()), this, SLOT(onErrorFound()));
-    connect(m_uploadManager, SIGNAL(sequenceCreated(int)), this, SLOT(onSequenceCreated(int)));
-    connect(m_uploadManager, SIGNAL(SequenceFinished(int)), this, SLOT(onSequenceFinished(int)));
-    connect(m_uploadManager, SIGNAL(photoUploaded(int, int)), this,
-            SLOT(onPhotoUploaded(int, int)));
-    connect(m_uploadManager, SIGNAL(videoUploaded(int, int)), this,
-            SLOT(onVideoUploaded(int, int)));
-    connect(m_uploadManager, SIGNAL(uploadProgress(qint64)), this, SLOT(onUploadProgress(qint64)));
+    connect(m_OSVAPI, SIGNAL(errorFound()), this, SLOT(onErrorFound()));
+    connect(m_OSVAPI, SIGNAL(sequenceCreated(int)), this, SLOT(onSequenceCreated(int)));
+    connect(m_OSVAPI, SIGNAL(SequenceFinished(int)), this, SLOT(onSequenceFinished(int)));
+    connect(m_OSVAPI, SIGNAL(photoUploaded(int, int)), this, SLOT(onPhotoUploaded(int, int)));
+    connect(m_OSVAPI, SIGNAL(videoUploaded(int, int)), this, SLOT(onVideoUploaded(int, int)));
+    connect(m_OSVAPI, SIGNAL(uploadProgress(qint64)), this, SLOT(onUploadProgress(qint64)));
     connect(m_persistentController, SIGNAL(informationChanged()), this,
             SLOT(onInformationChanged()));
     connect(m_elapsedTimeCounter, SIGNAL(elapsedTimeChanged()), this, SLOT(onElapsedTimeChanged()));
@@ -28,14 +26,11 @@ UploadController::UploadController(LoginController* lc, PersistentController* pc
 
 UploadController::~UploadController()
 {
-    disconnect(m_uploadManager, SIGNAL(sequenceCreated(int)), this, SLOT(onSequenceCreated(int)));
-    disconnect(m_uploadManager, SIGNAL(sequenceFinished(int)), this, SLOT(onSequenceFinished(int)));
-    disconnect(m_uploadManager, SIGNAL(photoUploaded(int, int)), this,
-               SLOT(onPhotoUploaded(int, int)));
-    disconnect(m_uploadManager, SIGNAL(videoUploaded(int, int)), this,
-               SLOT(onVideoUploaded(int, int)));
-    disconnect(m_uploadManager, SIGNAL(uploadProgress(qint64)), this,
-               SLOT(onUploadProgress(qint64)));
+    disconnect(m_OSVAPI, SIGNAL(sequenceCreated(int)), this, SLOT(onSequenceCreated(int)));
+    disconnect(m_OSVAPI, SIGNAL(sequenceFinished(int)), this, SLOT(onSequenceFinished(int)));
+    disconnect(m_OSVAPI, SIGNAL(photoUploaded(int, int)), this, SLOT(onPhotoUploaded(int, int)));
+    disconnect(m_OSVAPI, SIGNAL(videoUploaded(int, int)), this, SLOT(onVideoUploaded(int, int)));
+    disconnect(m_OSVAPI, SIGNAL(uploadProgress(qint64)), this, SLOT(onUploadProgress(qint64)));
     disconnect(m_persistentController, SIGNAL(informationChanged()), this,
                SLOT(onInformationChanged()));
     disconnect(m_elapsedTimeCounter, SIGNAL(elapsedTimeChanged()), this,
@@ -78,7 +73,7 @@ void UploadController::UploadSequence(PersistentSequence* sequence, const int se
     switch (sequence->getSequenceStatus())
     {
         case SequenceStatus::AVAILABLE:
-            m_uploadManager->requestNewSequence(sequence, sequenceIndex);
+            m_OSVAPI->requestNewSequence(sequence, sequenceIndex);
             break;
         case SequenceStatus::BUSY:
             for (int index = 0; index < kCountThreads; index++)
@@ -88,11 +83,11 @@ void UploadController::UploadSequence(PersistentSequence* sequence, const int se
                     const int multithreadIndex = sequence->getIndexOfNextAvailablePhoto();
                     if (multithreadIndex != -1)
                     {
-                        m_uploadManager->requestNewPhoto(sequence, sequenceIndex, multithreadIndex);
+                        m_OSVAPI->requestNewPhoto(sequence, sequenceIndex, multithreadIndex);
                     }
                     else if (multithreadIndex == -1 && sequence->areAllFilesSent())
                     {
-                        m_uploadManager->requestSequenceFinished(sequence, sequenceIndex);
+                        m_OSVAPI->requestSequenceFinished(sequence, sequenceIndex);
                         break;
                     }
                 }
@@ -102,11 +97,11 @@ void UploadController::UploadSequence(PersistentSequence* sequence, const int se
                     const int multithreadIndex = sequence->getIndexOfNextAvailableVideo();
                     if (multithreadIndex != -1)
                     {
-                        m_uploadManager->requestNewVideo(sequence, sequenceIndex, multithreadIndex);
+                        m_OSVAPI->requestNewVideo(sequence, sequenceIndex, multithreadIndex);
                     }
                     else if (multithreadIndex == -1 && sequence->areAllFilesSent())
                     {
-                        m_uploadManager->requestSequenceFinished(sequence, sequenceIndex);
+                        m_OSVAPI->requestSequenceFinished(sequence, sequenceIndex);
                         break;
                     }
                 }
@@ -118,19 +113,19 @@ void UploadController::UploadSequence(PersistentSequence* sequence, const int se
             if (sequence->sequenceId() > -1)
             {
                 if (photoCount)
-                    m_uploadManager->requestNewPhoto(sequence, sequenceIndex,
-                                                     sequence->getIndexOfNextAvailablePhoto());
+                    m_OSVAPI->requestNewPhoto(sequence, sequenceIndex,
+                                              sequence->getIndexOfNextAvailablePhoto());
                 else
-                    m_uploadManager->requestNewVideo(sequence, sequenceIndex,
-                                                     sequence->getIndexOfNextAvailablePhoto());
+                    m_OSVAPI->requestNewVideo(sequence, sequenceIndex,
+                                              sequence->getIndexOfNextAvailablePhoto());
             }
             else
             {
-                m_uploadManager->requestNewSequence(sequence, sequenceIndex);
+                m_OSVAPI->requestNewSequence(sequence, sequenceIndex);
             }
             break;
         case SequenceStatus::FAILED_FINISH:
-            m_uploadManager->requestSequenceFinished(sequence, sequenceIndex);
+            m_OSVAPI->requestSequenceFinished(sequence, sequenceIndex);
             break;
         default:
             selectNewSequence();
@@ -148,7 +143,7 @@ void UploadController::onSequenceCreated(int sequenceIndex)
         qDebug() << "New photo sequence!";
         for (int index = 0; index < kCountThreads && index < sequence->getPhotos().size(); index++)
         {
-            m_uploadManager->requestNewPhoto(sequence, sequenceIndex, index);
+            m_OSVAPI->requestNewPhoto(sequence, sequenceIndex, index);
         }
     }
     else if (sequence->getVideos().size())
@@ -156,7 +151,7 @@ void UploadController::onSequenceCreated(int sequenceIndex)
         qDebug() << "New video sequence!";
         for (int index = 0; index < kCountThreads && index < sequence->getVideos().size(); index++)
         {
-            m_uploadManager->requestNewVideo(sequence, sequenceIndex, index);
+            m_OSVAPI->requestNewVideo(sequence, sequenceIndex, index);
         }
     }
 }
@@ -217,11 +212,11 @@ void UploadController::onPhotoUploaded(int sequenceIndex, int photoIndex)
     const int nextIndex = sequence->getIndexOfNextAvailablePhoto();
     if (nextIndex != -1)
     {
-        m_uploadManager->requestNewPhoto(sequence, sequenceIndex, nextIndex);
+        m_OSVAPI->requestNewPhoto(sequence, sequenceIndex, nextIndex);
     }
     else if (sequence->areAllFilesSent())
     {
-        m_uploadManager->requestSequenceFinished(sequence, sequenceIndex);
+        m_OSVAPI->requestSequenceFinished(sequence, sequenceIndex);
     }
 }
 
@@ -239,11 +234,11 @@ void UploadController::onVideoUploaded(int sequenceIndex, int videoIndex)
     const int nextIndex = sequence->getIndexOfNextAvailableVideo();
     if (nextIndex != -1)
     {
-        m_uploadManager->requestNewVideo(sequence, sequenceIndex, nextIndex);
+        m_OSVAPI->requestNewVideo(sequence, sequenceIndex, nextIndex);
     }
     else if (sequence->areAllFilesSent())
     {
-        m_uploadManager->requestSequenceFinished(sequence, sequenceIndex);
+        m_OSVAPI->requestSequenceFinished(sequence, sequenceIndex);
     }
 }
 
@@ -264,7 +259,7 @@ void UploadController::pauseUpload()
     qDebug() << "pause upload";
     setIsUploadPaused(true);
     blockSignals(true);
-    m_uploadManager->pauseUpload();
+    m_OSVAPI->pauseUpload();
     m_elapsedTimeCounter->pause();
 }
 
@@ -274,7 +269,7 @@ void UploadController::resumeUpload()
     blockSignals(false);
     setIsUploadPaused(false);
     m_elapsedTimeCounter->resume();
-    m_uploadManager->resumeUpload();
+    m_OSVAPI->resumeUpload();
     m_persistentController->resetStatusForUnsentSequenceFiles();
     onInformationChanged();
     selectNewSequence();

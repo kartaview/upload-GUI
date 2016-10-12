@@ -11,13 +11,13 @@ SOURCES += main.cpp \
     jsonserializable.cpp \
     GZIP.cpp \
     exif.cpp \
-    UploadManager.cpp \
     persistentsequence.cpp \
     persistentcontroller.cpp \
     video.cpp \
     metadata.cpp \
     uploadcontroller.cpp \
-    elapsedtimecounter.cpp
+    elapsedtimecounter.cpp \
+    OSVAPI.cpp
 
 RESOURCES += qml.qrc
 
@@ -34,25 +34,13 @@ HEADERS += \
     jsonserializable.h \
     GZIP.h \
     exif.h \
-    UploadManager.h \
     persistentsequence.h \
     persistentcontroller.h \
     video.h \
     metadata.h \
     uploadcontroller.h \
-    elapsedtimecounter.h
-
-
-
-unix {
-    SOURCES += usbdevices.cpp \
-               usbdeviceinfo.cpp \
-               osvdevicescanner.cpp
-
-    HEADERS += usbdevices.h \
-               usbdeviceinfo.h \
-               osvdevicescanner.h
-}
+    elapsedtimecounter.h \
+    OSVAPI.h
 
 #http libs
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../HTTPRequest/release/ -lHTTPRequest
@@ -89,22 +77,6 @@ else:unix {
 
 INCLUDEPATH += $$PWD/../zlib
 DEPENDPATH += $$PWD/../zlib
-
-#usblib
-win32 {
-   # LIBS+= $$OUT_PWD/../libusb/release/libusblib.lib
-}
-else:macx {
-    LIBS+= $$OUT_PWD/../libusb/libusblib.a
-    LIBS += -framework CoreFoundation -framework Cocoa -framework IOKit
-    INCLUDEPATH += $$PWD/../libusb/include/libusb-1.0
-}
-else:unix {
-    LIBS += /usr/include/libusb-1.0/libusb.h
-    LIBS += /usr/lib/x86_64-linux-gnu/libusb-1.0.so
-    INCLUDEPATH += /usr/include/libusb-1.0/
-    INCLUDEPATH += /usr/lib/x86_64-linux-gnu/
-}
 
 #framework
 FRAMEWORKS.files += $$OUT_PWD/../HTTPRequest/libHTTPRequest.1.dylib

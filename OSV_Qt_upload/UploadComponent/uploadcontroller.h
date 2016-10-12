@@ -1,7 +1,7 @@
 #ifndef UPLOADCONTROLLER_H
 #define UPLOADCONTROLLER_H
 
-#include "UploadManager.h"
+#include "OSVAPI.h"
 #include "elapsedtimecounter.h"
 #include "logincontroller.h"
 #include "persistentcontroller.h"
@@ -95,7 +95,7 @@ private:
     bool      m_isError;
     bool      m_isUploadComplete;
 
-    UploadManager*        m_uploadManager;
+    OSVAPI*               m_OSVAPI;
     LoginController*      m_loginController;
     PersistentController* m_persistentController;
     ElapsedTimeCounter*   m_elapsedTimeCounter;

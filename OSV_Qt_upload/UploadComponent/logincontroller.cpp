@@ -1,6 +1,6 @@
 #include "logincontroller.h"
+#include "OSVAPI.h"
 #include "QQmlApplicationEngine"
-#include "UploadManager.h"
 #include "uploadcomponentconstants.h"
 #include <QDir>
 #include <QHttpPart>
@@ -144,7 +144,7 @@ void LoginController::requestAccessTokenFromOSV()
             QString    string_data = QString::fromLatin1(data.data());
             qDebug() << string_data;
 
-            QJsonObject json = UploadManager::objectFromString(string_data);
+            QJsonObject json = OSVAPI::objectFromString(string_data);
             if (!json.isEmpty())
             {
                 QJsonObject   statusObj  = json["status"].toObject();

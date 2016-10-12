@@ -1,4 +1,4 @@
-#include "UploadManager.h"
+#include "OSVAPI.h"
 #include "metadata.h"
 #include <QCoreApplication>
 #include <QDebug>
@@ -9,7 +9,7 @@
 #include <QJsonObject>
 #include <QJsonValue>
 
-UploadManager::UploadManager(QObject* parent)
+OSVAPI::OSVAPI(QObject* parent)
     : QObject(parent)
     , m_uploadPaused(false)
 {
@@ -26,12 +26,12 @@ UploadManager::UploadManager(QObject* parent)
             SLOT(onNewVideoFailed(PersistentSequence*, int, int)), Qt::QueuedConnection);
 }
 
-UploadManager::~UploadManager()
+OSVAPI::~OSVAPI()
 {
     delete m_manager;
 }
 
-QJsonObject UploadManager::objectFromString(const QString& in)
+QJsonObject OSVAPI::objectFromString(const QString& in)
 {
     QJsonObject obj;
 
@@ -56,7 +56,7 @@ void delay()
         QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
 }
 
-void UploadManager::requestNewSequence(PersistentSequence* sequence, const int sequenceIndex)
+void OSVAPI::requestNewSequence(PersistentSequence* sequence, const int sequenceIndex)
 {
     if (m_uploadPaused)
     {
@@ -208,7 +208,7 @@ void UploadManager::requestNewSequence(PersistentSequence* sequence, const int s
     }
 }
 
-void UploadManager::onNewSequenceFailed(PersistentSequence* sequence, const int sequenceIndex)
+void OSVAPI::onNewSequenceFailed(PersistentSequence* sequence, const int sequenceIndex)
 {
     qDebug() << "New Sequence Failed!";
     sequence->setSequenceStatus(SequenceStatus::FAILED);
@@ -217,7 +217,7 @@ void UploadManager::onNewSequenceFailed(PersistentSequence* sequence, const int 
     requestNewSequence(sequence, sequenceIndex);
 }
 
-void UploadManager::requestSequenceFinished(
+void OSVAPI::requestSequenceFinished(
     PersistentSequence* sequence, const int sequenceIndex)  // sequenceId, externalUserId, userType
 {
     if (m_uploadPaused)
@@ -300,7 +300,7 @@ void UploadManager::requestSequenceFinished(
     }
 }
 
-void UploadManager::onSequenceFinishedFailed(PersistentSequence* sequence, const int sequenceIndex)
+void OSVAPI::onSequenceFinishedFailed(PersistentSequence* sequence, const int sequenceIndex)
 {
     qDebug() << "Sequence Finish Failed! Bad Reply!";
     sequence->setSequenceStatus(SequenceStatus::FAILED_FINISH);
@@ -308,8 +308,8 @@ void UploadManager::onSequenceFinishedFailed(PersistentSequence* sequence, const
     requestSequenceFinished(sequence, sequenceIndex);
 }
 
-void UploadManager::requestNewPhoto(PersistentSequence* sequence, const int sequenceIndex,
-                                    const int photoIndex)
+void OSVAPI::requestNewPhoto(PersistentSequence* sequence, const int sequenceIndex,
+                             const int photoIndex)
 {
     const QList<Photo*> photoList = sequence->getPhotos();
 
@@ -445,16 +445,16 @@ void UploadManager::requestNewPhoto(PersistentSequence* sequence, const int sequ
     }
 }
 
-void UploadManager::onNewPhotoFailed(PersistentSequence* sequence, const int sequenceIndex,
-                                     const int photoIndex)
+void OSVAPI::onNewPhotoFailed(PersistentSequence* sequence, const int sequenceIndex,
+                              const int photoIndex)
 {
     qDebug() << "New Photo Failed! Bad Reply! " << photoIndex;
     delay();
     requestNewPhoto(sequence, sequenceIndex, photoIndex);
 }
 
-void UploadManager::requestNewVideo(PersistentSequence* sequence, const int sequenceIndex,
-                                    const int videoIndex)
+void OSVAPI::requestNewVideo(PersistentSequence* sequence, const int sequenceIndex,
+                             const int videoIndex)
 {
     const QList<Video*> videoList = sequence->getVideos();
 
@@ -585,20 +585,20 @@ void UploadManager::requestNewVideo(PersistentSequence* sequence, const int sequ
     delete videoFile;
 }
 
-void UploadManager::onNewVideoFailed(PersistentSequence* sequence, const int sequenceIndex,
-                                     const int videoIndex)
+void OSVAPI::onNewVideoFailed(PersistentSequence* sequence, const int sequenceIndex,
+                              const int videoIndex)
 {
     qDebug() << "New video Failed! Bad Reply! " << videoIndex;
     delay();
     requestNewVideo(sequence, sequenceIndex, videoIndex);
 }
 
-void UploadManager::pauseUpload()
+void OSVAPI::pauseUpload()
 {
     m_uploadPaused = true;
 }
 
-void UploadManager::resumeUpload()
+void OSVAPI::resumeUpload()
 {
     m_uploadPaused = false;
 }
